@@ -130,17 +130,17 @@
               var random = Math.random() * 100;
               if(random < 90){
                 li.textContent = `(${id})自分:` + text + 'いわいまさゆき' + random
-              }else if(89 <= random || random < 96){
+              }else if(89 <= random){
                 li.textContent = `(${id})自分:` + text + 'いわいだいすき' + random
-              }else{
+              }else if(random < 99){
                 li.textContent = `(${id})自分:` + text + 'いわいSくれ' + random
               }
             } else {
               if(random < 90){
                 li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
-              }else if(89 <= random || random < 96){
+              }else if(89 <= random){
                 li.textContent = `(${id})自分:` + text + 'いわいだいすき'
-              }else{
+              }else if(random < 99){
                 li.textContent = `(${id})自分:` + text + 'いわいSくれ'
               }
             }
