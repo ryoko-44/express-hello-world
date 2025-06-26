@@ -127,9 +127,22 @@
             const messageList = document.querySelector('.messages')
             const li = document.createElement('li')
             if (id === myId) {
-              li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
+              const random = Math.random() * 100;
+              if(random < 90){
+                li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
+              }else if(90 <= random || random < 98){
+                li.textContent = `(${id})自分:` + text + 'いわいだいすき'
+              }else{
+                li.textContent = `(${id})自分:` + text + 'いわいSくれ'
+              }
             } else {
-              li.textContent = id + ': ' + text + 'いわいまさゆき'
+              if(random < 90){
+                li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
+              }else if(90 <= random || random < 98){
+                li.textContent = `(${id})自分:` + text + 'いわいだいすき'
+              }else{
+                li.textContent = `(${id})自分:` + text + 'いわいSくれ'
+              }
             }
             messageList.appendChild(li)
           }
