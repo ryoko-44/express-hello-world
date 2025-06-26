@@ -127,14 +127,7 @@
             const messageList = document.querySelector('.messages')
             const li = document.createElement('li')
             if (id === myId) {
-              var random = Math.random() * 100;
-              if(0 <= random || random < 90)
               li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
-            }else if(90 <= random || random < 99){
-              li.textContent = `(${id})自分:` + text + 'いわいだいすき'
-            }else{
-              li.textContent = `(${id})自分:` + text + 'いわいSくれ'
-            }
             } else {
               li.textContent = id + ': ' + text
             }
