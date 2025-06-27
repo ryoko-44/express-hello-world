@@ -31,6 +31,49 @@
         background: #eee;
         cursor: pointer;
       }
+      /*  見た目を整えるCSS */
+
+/* inputタグの見た目をリセット */
+input {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  font: inherit;
+  outline: none;
+}
+
+/* 横並び */
+.box {
+  display: flex;
+  align-items: center;
+  margin-top: 20px;
+}
+
+/* [type="color"] ピッカーの見た目を変更 */
+input[type="color"] {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: inline-block;
+  margin-right: 18px;
+  border: 1px solid #777;
+  border-radius: 50%;
+}
+input[type="color"]::-webkit-color-swatch,
+input[type="color"]::-webkit-color-swatch-wrapper {
+  border: none;
+  padding: 0;
+  border-radius: 50%;
+}
+
+/* [type="text"] コード入力エリアの見た目を変更 */
+input[type="text"] {
+  border: 1px solid #333;
+  padding: 5px;
+}
     </style>
   </head>
   <body>
