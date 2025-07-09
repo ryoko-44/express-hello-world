@@ -4,247 +4,126 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Chat App</title>
+  <title>Chat App with Drawing and Eraser</title>
   <style>
-    .chat {
-      display: flex;
-      flex-direction: column;
-      height: 80vh;
+    canvas {
+      border: 1px solid black;
+      display: block;
+      margin-bottom: 10px;
     }
-
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      list-style: none;
-      padding: 0;
-      margin: 0;
-    }
-
-    .form {
-      display: flex;
-    }
-
-    .input {
-      flex: 1;
-      padding: 10px;
-      border: 1px solid #ccc;
-    }
-
-    .submit {
-      padding: 10px;
-      border: 1px solid #ccc;
-      background: #eee;
-      cursor: pointer;
-    }
-
-    /* 横並び(オタニ追加) */
-    .box {
+    #controls {
       display: flex;
       align-items: center;
-      margin-top: 20px;
-    }
-
-    /* [type="color"] ピッカーの見た目を変更(オタニ追加) */
-    input[type="color"] {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      display: inline-block;
-      margin-right: 18px;
-      border: 1px solid rgb(0, 0, 0);
-      border-radius: 50%;
-    }
-
-    input[type="color"]::-webkit-color-swatch,
-    input[type="color"]::-webkit-color-swatch-wrapper {
-      border: none;
-      padding: 0;
-      border-radius: 50%;
-    }
-
-    /* [type="text"] コード入力エリアの見た目を変更(オタニ追加) */
-    input[type="text"] {
-      border: 1px solid rgb(0, 0, 0);
-      padding: 5px;
+      gap: 10px;
+      margin-bottom: 20px;
     }
   </style>
 </head>
 
 <body>
-  <div class="chat">
-    <ul class="messages"></ul>
-    <form class="form">
-      <input class="input" autocomplete="off" />
-      <button class="submit">Send</button>
-    </form>
+  <canvas id="canvas" width="600" height="600"></canvas>
+
+  <div id="controls">
+    <label>色: <input type="color" id="colorPicker" value="#000000"></label>
+    <label>太さ: <input type="range" id="lineWidthSlider" min="1" max="20" value="5"></label>
+    <button id="eraserToggle">🧽 消しゴム OFF</button>
   </div>
-  <canvas id="canvas" width="600" height="600" style="border: solid 1px black"></canvas>
-  <label>
-    線の太さ:
-    <input type="range" id="lineWidthSlider" min="1" max="20" value="5">
-  </label>
-  <input type="color" value="#000000">
 
   <script>
-    function main() {
-      const myId = prompt("ユーザー名を入力してください")?.trim() || "名無し";
-      const host = location.origin.replace(/^http/, 'ws')
-      const ws = new WebSocket(host + '/ws')
-      //const myId = self.crypto.randomUUID().substr(0, 8)
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const colorPicker = document.getElementById('colorPicker');
+    const lineWidthSlider = document.getElementById('lineWidthSlider');
+    const eraserToggle = document.getElementById('eraserToggle');
 
-      const canvas = document.getElementById('canvas')
-      const ctx = canvas.getContext('2d')
+    let drawings = []; // すべての線の履歴
+    let currentStroke = null;
+    let drawing = false;
+    let eraserMode = false;
 
-      //ColorPickerの色と線の太さをcanvasに反映させる(オタニ追加)
-      const colorPicker = document.querySelector('input[type="color"]');
-      const lineWidthSlider = document.getElementById('lineWidthSlider');
+    eraserToggle.addEventListener("click", () => {
+      eraserMode = !eraserMode;
+      eraserToggle.textContent = eraserMode ? "🧽 消しゴム ON" : "🧽 消しゴム OFF";
+    });
 
-      ctx.strokeStyle = colorPicker.value;　//線の色を設定
-      ctx.lineWidth = lineWidthSlider.value; //線の太さを設定
-      colorPicker.addEventListener('input', () => {
+    canvas.addEventListener("mousedown", (e) => {
+      drawing = true;
+      const x = e.offsetX;
+      const y = e.offsetY;
+
+      if (eraserMode) {
+        eraseAt(x, y);
+      } else {
+        ctx.beginPath();
         ctx.strokeStyle = colorPicker.value;
-      });
-      lineWidthSlider.addEventListener('input', () => {
         ctx.lineWidth = lineWidthSlider.value;
-      });
+        ctx.moveTo(x, y);
 
-      //消しゴムを実装(オタニ追加)
-      let drawings = [];           // 全ての線を記録する配列
-      let currentStroke = null;    // 今描いている1本の線
-
-      canvas.addEventListener("mousedown", (e) => {
-        drawing = true;
-        ctx.beginPath();
-
-        // 新しいストロークを開始
         currentStroke = {
-          points: [{ x: e.offsetX, y: e.offsetY }],
+          points: [{ x, y }],
           color: ctx.strokeStyle,
-          width: ctx.lineWidth,
-          isErased: false
+          width: ctx.lineWidth
         };
-      });
-
-
-      canvas.addEventListener('mousedown', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown')
-      })
-      function mousedown() {
-        drawing = true;
-        ctx.beginPath();
-        if (color) ctx.strokeStyle = color;
-        if (width) ctx.lineWidth = width;
       }
+    });
 
-      canvas.addEventListener('mousemove', (e) => {
-        if (drawing) {
-          // 今の点を currentStroke に追加
-          const point = { x: e.offsetX, y: e.offsetY };
-          currentStroke.points.push(point);
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
-        }
-      })
-      function mousemove(x, y) {
-        if (drawing) {
-          draw(x, y, true)
-        }
+    canvas.addEventListener("mousemove", (e) => {
+      if (!drawing) return;
+      const x = e.offsetX;
+      const y = e.offsetY;
+
+      if (eraserMode) {
+        eraseAt(x, y);
+      } else if (currentStroke) {
+        currentStroke.points.push({ x, y });
+        ctx.lineTo(x, y);
+        ctx.stroke();
       }
+    });
 
-      canvas.addEventListener('mouseup', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
-      })
-
-      function mouseup() {
-        drawing = false
-        ctx.beginPath()
+    canvas.addEventListener("mouseup", () => {
+      drawing = false;
+      ctx.beginPath();
+      if (!eraserMode && currentStroke) {
+        drawings.push(currentStroke);
+        currentStroke = null;
       }
+    });
 
-      canvas.addEventListener('mouseout', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
-        // 完成した線を drawings に追加
-        if (currentStroke) {
-          drawings.push(currentStroke);
-          currentStroke = null;
-        }
-      })
-
-      function mouseout() {
-        drawing = false
+    canvas.addEventListener("mouseout", () => {
+      drawing = false;
+      ctx.beginPath();
+      if (!eraserMode && currentStroke) {
+        drawings.push(currentStroke);
+        currentStroke = null;
       }
+    });
 
-      function draw(x, y, dragging) {
-        if (dragging) {
-          ctx.lineTo(x, y)
-          ctx.stroke()
-        } else {
-          ctx.moveTo(x, y)
-        }
-      }
-
-      function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({ x, y, control, type: 'paint' })
-        ws.send(message)
-      }
-
-      //送信するメッセージに color, width を追加(オタニ追加)
-      function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({
-          x,
-          y,
-          control,
-          color: colorPicker.value,
-          width: lineWidthSlider.value,
-          type: 'paint'
+    function eraseAt(x, y) {
+      const threshold = 10;
+      drawings = drawings.filter(stroke => {
+        return !stroke.points.some(p => {
+          const dx = p.x - x;
+          const dy = p.y - y;
+          return Math.sqrt(dx * dx + dy * dy) < threshold;
         });
-        ws.send(message);
-      }
-
-      ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data)
-        if (msg.type === 'paint') {
-          const { x, y, control, color, width } = msg;
-          if (color) ctx.strokeStyle = color;
-          if (width) ctx.lineWidth = width;
-          if (control === 'mousedown') {
-            mousedown()
-          } else if (control === 'mouseup') {
-            mouseup()
-          } else if (control === 'mousemove') {
-            mousemove(x, y)
-          } else if (control === 'mouseout') {
-            mouseout()
-          }
-        }
-        if (msg.type === 'chat') {
-          const { id, text } = msg
-          const messageList = document.querySelector('.messages')
-          const li = document.createElement('li')
-          if (id === myId) {
-            li.textContent = `(${id})自分:` + text
-          } else {
-            li.textContent = id + ': ' + text
-          }
-          messageList.appendChild(li)
-        }
-      }
-
-      const form = document.querySelector('.form')
-
-      form.onsubmit = function (e) {
-        e.preventDefault()
-        const input = document.querySelector('.input')
-        const text = input.value
-        ws.send(JSON.stringify({ id: myId, text, type: 'chat' }))
-        input.value = ''
-        input.focus()
-      }
-
-      ws.onerror = function (error) {
-        console.error('WebSocket Error: ', error)
-      }
+      });
+      redrawAll();
     }
 
-    main()
+    function redrawAll() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      for (const stroke of drawings) {
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = stroke.width;
+        ctx.beginPath();
+        stroke.points.forEach((p, i) => {
+          if (i === 0) ctx.moveTo(p.x, p.y);
+          else ctx.lineTo(p.x, p.y);
+        });
+        ctx.stroke();
+      }
+    }
   </script>
 </body>
 
