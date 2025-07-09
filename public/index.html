@@ -108,7 +108,23 @@
         ctx.lineWidth = lineWidthSlider.value;
       });
 
-      let drawing = false
+      //消しゴムを実装(オタニ追加)
+      let drawings = [];           // 全ての線を記録する配列
+      let currentStroke = null;    // 今描いている1本の線
+
+      canvas.addEventListener("mousedown", (e) => {
+        drawing = true;
+        ctx.beginPath();
+
+        // 新しいストロークを開始
+        currentStroke = {
+          points: [{ x: e.offsetX, y: e.offsetY }],
+          color: ctx.strokeStyle,
+          width: ctx.lineWidth,
+          isErased: false
+        };
+      });
+
 
       canvas.addEventListener('mousedown', (e) => {
         sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown')
@@ -122,6 +138,9 @@
 
       canvas.addEventListener('mousemove', (e) => {
         if (drawing) {
+          // 今の点を currentStroke に追加
+          const point = { x: e.offsetX, y: e.offsetY };
+          currentStroke.points.push(point);
           sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
         }
       })
@@ -142,6 +161,11 @@
 
       canvas.addEventListener('mouseout', (e) => {
         sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
+        // 完成した線を drawings に追加
+        if (currentStroke) {
+          drawings.push(currentStroke);
+          currentStroke = null;
+        }
       })
 
       function mouseout() {
