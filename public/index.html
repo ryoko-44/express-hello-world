@@ -134,8 +134,20 @@
       }
 
       canvas.addEventListener('mousemove', (e) => {
-        if (drawing) {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
+        if (!drawing) return;
+        const x = e.offsetX;
+        const y = e.offsetY;
+
+        if (eraserMode) {
+          eraseAt(x, y);
+        } else if (currentStroke) {
+          const prev = currentStroke.points[currentStroke.points.length - 1];
+          currentStroke.points.push({ x, y });
+
+          ctx.beginPath();
+          ctx.moveTo(prev.x, prev.y);
+          ctx.lineTo(x, y);
+          ctx.stroke();
         }
       })
       function mousemove(x, y) {
