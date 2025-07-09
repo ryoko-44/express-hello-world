@@ -76,7 +76,7 @@ input[type="text"] {
       id="canvas"
       width="600"
       height="600"
-      style="border: solid 1px rgb(0, 0, 0)"
+      style="border: solid 1px rgb(51, 0, 255)"
     ></canvas>
     <input type="color" value="#00ff00">
 
@@ -160,22 +160,9 @@ input[type="text"] {
             const li = document.createElement('li')
             if (id === myId) {
               var random = Math.random() * 100;
-              if(random < 90){
-                li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
-              }else if(90 <= random && random < 97){
-                li.textContent = `(${id})自分:` + text + 'いわいだいすき'
-              }else{
-                li.textContent = `(${id})自分:` + text + 'いわいSくれ'
-              }
+                li.textContent = `(${id})自分:` + text
             } else {
-              if(random < 90){
-                li.textContent = `(${id})自分:` + text + 'いわいまさゆき'
-              }else if(90 <= random && random < 97){
-                li.textContent = `(${id})自分:` + text + 'いわいだいすき'
-              }else{
-                li.textContent = `(${id})自分:` + text + 'いわいSくれ'
-              }
-            }
+                li.textContent = `(${id})自分:` + text
             messageList.appendChild(li)
           }
         }
