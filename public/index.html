@@ -83,6 +83,7 @@
     線の太さ:
     <input type="range" id="lineWidthSlider" min="0.5" max="10" value="0.5">
   </label>
+  <button id="eraserToggle">消しゴムモード OFF</button>
   <input type="color" value="#000000">
 
   <script>
@@ -104,6 +105,14 @@
       colorPicker.addEventListener('input', () => {
         ctx.strokeStyle = colorPicker.value;
       });
+      //消しゴムの追加(オタニ追加)
+      let eraserMode = false;
+      const eraserToggle = document.getElementById('eraserToggle');
+      eraserToggle.addEventListener('click', () => {
+        eraserMode = !eraserMode;
+        eraserToggle.textContent = eraserMode ? '消しゴムモード ON' : '消しゴムモード OFF';
+      });
+
 
       lineWidthSlider.addEventListener('input', () => {
         ctx.lineWidth = lineWidthSlider.value;
@@ -159,7 +168,7 @@
         }
       }
 
-      //送信するメッセージに color, width を追加
+      //送信するメッセージに color, width, eraser を追加
       function sendDrawingEvent(x, y, control) {
         const message = JSON.stringify({
           x,
@@ -167,18 +176,23 @@
           control,
           color: colorPicker.value,
           width: lineWidthSlider.value,
+          eraser: eraserMode,
           type: 'paint'
         });
         ws.send(message);
       }
 
-      //color, widthを追加(オタニ追加)
+      //受信側に color, width, eraser を追加(オタニ追加)
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data)
         if (msg.type === 'paint') {
-          const { x, y, control, color, width } = msg;
+          const { x, y, control, color, width, eraser } = msg;
 
-          if (color) ctx.strokeStyle = color;
+          if (eraser) {
+            ctx.strokeStyle = '#ffffff'; //消しゴムは白で描画(実際に消していない)
+          } else {
+            if (color) ctx.strokeStyle = color;
+          }
           if (width) ctx.lineWidth = width;
 
           console.log({ control })
@@ -197,7 +211,7 @@
           const messageList = document.querySelector('.messages')
           const li = document.createElement('li')
           if (id === myId) {
-            li.textContent = (${id}) 自分: + text
+            li.textContent = (${ id }) 自分: + text
           } else {
             li.textContent = id + ': ' + text
           }
