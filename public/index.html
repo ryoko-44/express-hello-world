@@ -134,7 +134,9 @@
   <input type="color" id="colorPicker" value="#000000">
   <!-- 消しゴム(オタニ追加) -->
   <button id="eraserToggle">消しゴム OFF</button>
-
+  <!-- Undo/Redo(オタニ追加) -->
+  <button id="undoBtn">↩</button>
+  <button id="redoBtn">↪</button>
   <script>
     function main() {
       // myIdを自分で入力するように変更(入力なしならランダム)(カワグチ)
@@ -164,7 +166,7 @@
           countSpan.style.marginLeft = '10px'
           startButton.parentNode.insertBefore(countSpan, startButton.nextSibling)
         }
-        countSpan.textContent = 入室人数: ${players.size} 人
+        countSpan.textContent = `入室人数: ${players.size} 人`
       }
 
       // ゲーム開始ボタンが押されたら(カワグチ)
@@ -174,7 +176,7 @@
         const playerCount = players.size
 
         const confirmed = confirm(
-          入室人数: ${playerCount}人\nラウンド数: ${round}ラウンド\nターン数: ${turn}ターン\n\nゲームを開始しますか？
+          `入室人数: ${playerCount}人\nラウンド数: ${round}ラウンド\nターン数: ${turn}ターン\n\nゲームを開始しますか？`
         )
 
         if (confirmed) {
@@ -184,16 +186,25 @@
         }
       }
 
+      //過去に書いたものを入れる配列(オタニ追加)
+      let drawingHistory = [];
+      let undoneHistory = [];
+
       const canvas = document.getElementById('canvas')
       const ctx = canvas.getContext('2d')
 
-      //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
+      //ColorPickerの色、線の太さ、消しゴム、リドゥ、アンドゥをcanvasに反映させる(オタニ追加)
       const colorPicker = document.getElementById('colorPicker');
       const lineWidthSlider = document.getElementById('lineWidthSlider');
       const eraserToggle = document.getElementById('eraserToggle');
+      const undoBtn = document.getElementById('undoBtn');
+      const redoBtn = document.getElementById('redoBtn');
 
       ctx.strokeStyle = colorPicker.value;
       ctx.lineWidth = lineWidthSlider.value;
+
+      //現在描画している線の座標を一時的に保存するための配列(オタニ追加)
+      let currentStroke = [];
 
       colorPicker.addEventListener('input', () => {
         if (!eraserMode) {
@@ -204,42 +215,56 @@
         ctx.lineWidth = lineWidthSlider.value;
       });
 
-      let drawing = false;
-      let eraserMode = false;
-
       //トグル(オタニ追加)
       eraserToggle.addEventListener('click', () => {
         eraserMode = !eraserMode;
         eraserToggle.textContent = eraserMode ? "消しゴム ON" : "消しゴム OFF";
-        if (eraserMode) {
-          ctx.strokeStyle = "#ffffff";//←実際に消していない白で上塗りしている
-        } else {
-          ctx.strokeStyle = colorPicker.value;
-        }
+        ctx.strokeStyle = eraserMode ? "#ffffff" : colorPicker.value;
       });
 
-      canvas.addEventListener('mousedown', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown');
+      //undo/redoを WebSocketで送信(オタニ追加)
+      undoBtn.onclick = () => {
+        ws.send(JSON.stringify({ type: 'undo' }));
+      }
+      redoBtn.onclick = () => {
+        ws.send(JSON.stringify({ type: 'redo' }));
+      }
+
+      //書き換えた(オタニ追加)
+      canvas.addEventListener('mousedown', e => {
+        drawing = true;
+        ctx.beginPath();
+        ctx.moveTo(e.offsetX, e.offsetY);
+        currentStroke = [{ x: e.offsetX, y: e.offsetY }];
       });
       function mousedown() {
         drawing = true;
         ctx.beginPath();
       }
 
-      canvas.addEventListener('mousemove', (e) => {
-        if (drawing) {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
-        }
-      })
+      //書き換えた(オタニ追加)
+      canvas.addEventListener('mousemove', e => {
+        if (!drawing) return;
+        ctx.lineTo(e.offsetX, e.offsetY);
+        ctx.stroke();
+        currentStroke.push({ x: e.offsetX, y: e.offsetY });
+      });
       function mousemove(x, y) {
         if (drawing) {
           draw(x, y, true)
         }
       }
 
-      canvas.addEventListener('mouseup', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
-      })
+      //書き換えた(オタニ追加)
+      canvas.addEventListener('mouseup', () => {
+        if (!drawing) return;
+        drawing = false;
+        drawingHistory.push({ points: currentStroke, color: ctx.strokeStyle, width: ctx.lineWidth });
+        ws.send(JSON.stringify({
+          type: 'stroke',
+          stroke: { points: currentStroke, color: ctx.strokeStyle, width: ctx.lineWidth }
+        }));
+      });
       function mouseup() {
         drawing = false
         ctx.beginPath()
@@ -280,26 +305,33 @@
         ws.send(JSON.stringify({ type: 'join', id: myId }))
       };
 
+      //キャンバス全体を再描画する(オタニ追加)
+      function redraw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        for (const stroke of drawingHistory) {
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = stroke.width;
+          ctx.beginPath();
+          stroke.points.forEach((p, i) => {
+            if (i === 0) ctx.moveTo(p.x, p.y);
+            else ctx.lineTo(p.x, p.y);
+          });
+          ctx.stroke();
+        }
+      }
+
       //受信側に color, width, eraser　を追加(オタニ追加)
       ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'paint') {
-          const { x, y, control, color, width } = msg;
-
-          if (color) ctx.strokeStyle = color;
-          if (width) ctx.lineWidth = parseFloat(width);
-
-          if (control === 'mousedown') {
-            mousedown();
-          } else if (control === 'mouseup') {
-            mouseup();
-          } else if (control === 'mousemove') {
-            mousemove(x, y);
-          } else if (control === 'mouseout') {
-            mouseout();
-          }
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'history') {
+          // 新しい履歴全体を受信したら、全体を置き換える
+          drawingHistory = msg.history;
+          redraw();
+        } else if (msg.type === 'stroke') {
+          // 新しい描画だけを追加
+          drawingHistory.push(msg.stroke);
+          redraw();
         }
-
 
         //プレイヤー情報が送られてきたら(カワグチ)
         if (msg.type === 'players') {
@@ -366,4 +398,41 @@
       // form.onsubmit = function (e) {
       //     e.preventDefault()
       //     const input = document.querySelector('.input')
-      //     const text = input
+      //     const text = input.value
+      //     ws.send(JSON.stringify({ id: myId, text, type: 'chat' }))
+      //     input.value = ''
+      //     input.focus()
+      // }
+
+      //↑の処理をチャットを区別したものに変更(オガワ)
+      chatForm.onsubmit = function (e) {
+        e.preventDefault()
+        const input = document.querySelector('.input')
+        const text = input.value
+
+        if (gameStarted) {
+          // ゲーム中なら回答として送信
+          // 回答が入力されていれば、回答も送信・保存
+          if (text !== '') {
+            ws.send(JSON.stringify({ id: myId, text: text, type: 'answer' }));
+          }
+        } else {
+          // ゲーム開始前ならチャットとして送信
+          if (text !== '') { // 空のメッセージは送信しない
+            ws.send(JSON.stringify({ id: myId, text: text, type: 'chat' }));
+          }
+        }
+        input.value = ''
+        input.focus()
+      }
+
+      ws.onerror = function (error) {
+        console.error('WebSocket Error: ', error)
+      }
+    }
+
+    main()
+  </script>
+</body>
+
+</html>
