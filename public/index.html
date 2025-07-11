@@ -155,9 +155,17 @@
         }
       }
 
+      // 🎯 送信するメッセージに color, width を追加
       function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({ x, y, control, type: 'paint' })
-        ws.send(message)
+        const message = JSON.stringify({
+          x,
+          y,
+          control,
+          color: colorPicker.value,
+          width: lineWidthSlider.value,
+          type: 'paint'
+        });
+        ws.send(message);
       }
 
       ws.onmessage = (event) => {
@@ -166,7 +174,7 @@
           const { x, y, control } = msg
           console.log({ control })
           if (control === 'mousedown') {
-            mousedown()
+            mousedown(color, width);
           } else if (control === 'mouseup') {
             mouseup()
           } else if (control === 'mousemove') {
