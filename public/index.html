@@ -100,7 +100,7 @@
       //文字の太さを反映させる
       const lineWidthSlider = document.getElementById('lineWidthSlider');
       ctx.strokeStyle = colorPicker.value; // 初期色の設定
-      ctx.lineWidth = lineWidthSlider.value; // 線の太さを 5px にする
+      ctx.lineWidth = lineWidthSlider.value; // 線の太さを設定
       colorPicker.addEventListener('input', () => {
         ctx.strokeStyle = colorPicker.value;
       });
@@ -119,6 +119,7 @@
       function mousedown() {
         drawing = true
         ctx.beginPath()
+        ctx.moveTo(x, y)
         if (color) ctx.strokeStyle = color;
         if (width) ctx.lineWidth = width;
       }
@@ -181,7 +182,7 @@
 
           console.log({ control })
           if (control === 'mousedown') {
-            mousedown()
+            mousedown(x, y)
           } else if (control === 'mouseup') {
             mouseup()
           } else if (control === 'mousemove') {
