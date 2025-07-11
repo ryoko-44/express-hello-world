@@ -79,10 +79,6 @@
     </form>
   </div>
   <canvas id="canvas" width="600" height="600" style="border: solid 1px black"></canvas>
-  <label>
-    線の太さ:
-    <input type="range" id="lineWidthSlider" min="1" max="20" value="5">
-  </label>
   <input type="color" value="#000000">
 
   <script>
@@ -98,14 +94,6 @@
       //ColorPickerの色をcanvasに反映させる
       const colorPicker = document.querySelector('input[type="color"]');
       ctx.strokeStyle = colorPicker.value; // 初期色の設定
-      const lineWidthSlider = document.getElementById('lineWidthSlider');
-      ctx.lineWidth = lineWidthSlider.value;
-
-      lineWidthSlider.addEventListener('input', () => {
-        ctx.lineWidth = lineWidthSlider.value;
-      });
-
-
       colorPicker.addEventListener('input', () => {
         ctx.strokeStyle = colorPicker.value;
       });
@@ -155,43 +143,32 @@
         }
       }
 
-      // 🎯 送信するメッセージに color, width を追加
       function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({
-          x,
-          y,
-          control,
-          color: colorPicker.value,
-          width: lineWidthSlider.value,
-          type: 'paint'
-        });
-        ws.send(message);
+        const message = JSON.stringify({ x, y, control, type: 'paint' })
+        ws.send(message)
       }
 
-       ws.onmessage = (event) => {
-    const msg = JSON.parse(event.data);
-    if (msg.type === 'paint') {
-      const { x, y, control, color, width } = msg;
-
-      if (color) ctx.strokeStyle = color;
-      if (width) ctx.lineWidth = width;
-
-      if (control === 'mousedown') {
-        mousedown(color, width);
-      } else if (control === 'mouseup') {
-        mouseup();
-      } else if (control === 'mousemove') {
-        mousemove(x, y);
-      } else if (control === 'mouseout') {
-        mouseout();
-      }
-    }
+      ws.onmessage = (event) => {
+        const msg = JSON.parse(event.data)
+        if (msg.type === 'paint') {
+          const { x, y, control } = msg
+          console.log({ control })
+          if (control === 'mousedown') {
+            mousedown()
+          } else if (control === 'mouseup') {
+            mouseup()
+          } else if (control === 'mousemove') {
+            mousemove(x, y)
+          } else if (control === 'mouseout') {
+            mouseout()
+          }
+        }
         if (msg.type === 'chat') {
           const { id, text } = msg
           const messageList = document.querySelector('.messages')
           const li = document.createElement('li')
           if (id === myId) {
-            li.textContent = (${ id }) 自分: + text
+            li.textContent = `(${id})自分:` + text
           } else {
             li.textContent = id + ': ' + text
           }
