@@ -116,7 +116,7 @@
       canvas.addEventListener('mousedown', (e) => {
         sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown')
       })
-      function mousedown() {
+      function mousedown(x, y) {
         drawing = true
         ctx.beginPath()
         ctx.moveTo(x, y)
