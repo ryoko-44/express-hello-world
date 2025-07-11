@@ -37,14 +37,12 @@
       cursor: pointer;
     }
 
-    /* 横並び */
     .box {
       display: flex;
       align-items: center;
       margin-top: 20px;
     }
 
-    /* [type="color"] ピッカーの見た目を変更 */
     input[type="color"] {
       width: 32px;
       height: 32px;
@@ -62,10 +60,13 @@
       border-radius: 50%;
     }
 
-    /* [type="text"] コード入力エリアの見た目を変更 */
     input[type="text"] {
       border: 1px solid rgb(0, 0, 0);
       padding: 5px;
+    }
+
+    #eraserToggle {
+      margin-left: 10px;
     }
   </style>
 </head>
@@ -78,102 +79,118 @@
       <button class="submit">Send</button>
     </form>
   </div>
+
   <canvas id="canvas" width="600" height="600" style="border: solid 1px black"></canvas>
   <label>
     線の太さ:
     <input type="range" id="lineWidthSlider" min="1" max="20" value="5">
   </label>
-
-  <input type="color" value="#000000">
+  <input type="color" id="colorPicker" value="#000000">
+  <button id="eraserToggle">🧽 消しゴム OFF</button>
 
   <script>
     function main() {
       const myId = prompt("ユーザー名を入力してください")?.trim() || "名無し";
       const host = location.origin.replace(/^http/, 'ws')
       const ws = new WebSocket(host + '/ws')
-      //const myId = self.crypto.randomUUID().substr(0, 8)
 
       const canvas = document.getElementById('canvas')
       const ctx = canvas.getContext('2d')
 
-      //ColorPickerの色をcanvasに反映させる
-      const colorPicker = document.querySelector('input[type="color"]');
-      ctx.strokeStyle = colorPicker.value; // 初期色の設定
-      colorPicker.addEventListener('input', () => {
-        ctx.strokeStyle = colorPicker.value;
-      });
-      //線の太さをcanvasに反映させる
+      const colorPicker = document.getElementById('colorPicker');
       const lineWidthSlider = document.getElementById('lineWidthSlider');
+      const eraserToggle = document.getElementById('eraserToggle');
+
+      ctx.strokeStyle = colorPicker.value;
       ctx.lineWidth = lineWidthSlider.value;
+
+      colorPicker.addEventListener('input', () => {
+        if (!eraserMode) {
+          ctx.strokeStyle = colorPicker.value;
+        }
+      });
       lineWidthSlider.addEventListener('input', () => {
         ctx.lineWidth = lineWidthSlider.value;
       });
 
+      let drawing = false;
+      let eraserMode = false;
 
-      let drawing = false
+      eraserToggle.addEventListener('click', () => {
+        eraserMode = !eraserMode;
+        eraserToggle.textContent = eraserMode ? "🧽 消しゴム ON" : "🧽 消しゴム OFF";
+        if (eraserMode) {
+          ctx.strokeStyle = "#ffffff";
+        } else {
+          ctx.strokeStyle = colorPicker.value;
+        }
+      });
 
       canvas.addEventListener('mousedown', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown')
-      })
-      function mousedown() {
-        drawing = true
-        ctx.beginPath()
-      }
+        sendDrawingEvent(e.offsetX, e.offsetY, 'mousedown');
+      });
 
       canvas.addEventListener('mousemove', (e) => {
         if (drawing) {
-          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
+          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove');
         }
-      })
-      function mousemove(x, y) {
-        if (drawing) {
-          draw(x, y, true)
-        }
-      }
+      });
 
       canvas.addEventListener('mouseup', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
-      })
-      function mouseup() {
-        drawing = false
-        ctx.beginPath()
-      }
+        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup');
+      });
 
       canvas.addEventListener('mouseout', (e) => {
-        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
-      })
+        sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout');
+      });
+
+      function mousedown() {
+        drawing = true;
+        ctx.beginPath();
+      }
+
+      function mousemove(x, y) {
+        if (drawing) {
+          draw(x, y, true);
+        }
+      }
+
+      function mouseup() {
+        drawing = false;
+        ctx.beginPath();
+      }
+
       function mouseout() {
-        drawing = false
+        drawing = false;
       }
 
       function draw(x, y, dragging) {
         if (dragging) {
-          ctx.lineTo(x, y)
-          ctx.stroke()
+          ctx.lineTo(x, y);
+          ctx.stroke();
         } else {
-          ctx.moveTo(x, y)
+          ctx.moveTo(x, y);
         }
       }
 
-      //色の情報と太さの情報を追加
       function sendDrawingEvent(x, y, control) {
         const message = JSON.stringify({
           x,
           y,
           control,
-          color: colorPicker.value,
+          color: eraserMode ? "#ffffff" : colorPicker.value,
           width: lineWidthSlider.value,
+          eraser: eraserMode,
           type: 'paint'
         });
-        ws.send(message)
+        ws.send(message);
       }
 
       ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data)
+        const msg = JSON.parse(event.data);
         if (msg.type === 'paint') {
           const { x, y, control, color, width } = msg;
 
-          // 色と線の太さを反映（受信側）
           if (color) ctx.strokeStyle = color;
           if (width) ctx.lineWidth = parseFloat(width);
 
@@ -187,36 +204,36 @@
             mouseout();
           }
         }
+
         if (msg.type === 'chat') {
-          const { id, text } = msg
-          const messageList = document.querySelector('.messages')
-          const li = document.createElement('li')
+          const { id, text } = msg;
+          const messageList = document.querySelector('.messages');
+          const li = document.createElement('li');
           if (id === myId) {
-            li.textContent = `(${id})自分:` + text
+            li.textContent = `(${id}) 自分: ` + text;
           } else {
-            li.textContent = id + ': ' + text
+            li.textContent = id + ': ' + text;
           }
-          messageList.appendChild(li)
+          messageList.appendChild(li);
         }
       }
 
-      const form = document.querySelector('.form')
-
+      const form = document.querySelector('.form');
       form.onsubmit = function (e) {
-        e.preventDefault()
-        const input = document.querySelector('.input')
-        const text = input.value
-        ws.send(JSON.stringify({ id: myId, text, type: 'chat' }))
-        input.value = ''
-        input.focus()
+        e.preventDefault();
+        const input = document.querySelector('.input');
+        const text = input.value;
+        ws.send(JSON.stringify({ id: myId, text, type: 'chat' }));
+        input.value = '';
+        input.focus();
       }
 
       ws.onerror = function (error) {
-        console.error('WebSocket Error: ', error)
+        console.error('WebSocket Error: ', error);
       }
     }
 
-    main()
+    main();
   </script>
 </body>
 
