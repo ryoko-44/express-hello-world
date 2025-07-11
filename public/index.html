@@ -322,24 +322,16 @@
 
       //受信側に color, width, eraser　を追加(オタニ追加)
       ws.onmessage = (event) => {
-        const msg = JSON.parse(event.data);
-        if (msg.type === 'paint') {
-          const { x, y, control, color, width } = msg;
-
-          if (color) ctx.strokeStyle = color;
-          if (width) ctx.lineWidth = parseFloat(width);
-
-          if (control === 'mousedown') {
-            mousedown();
-          } else if (control === 'mouseup') {
-            mouseup();
-          } else if (control === 'mousemove') {
-            mousemove(x, y);
-          } else if (control === 'mouseout') {
-            mouseout();
-          }
+        const msg = JSON.parse(e.data);
+        if (msg.type === 'history') {
+          // 新しい履歴全体を受信したら、全体を置き換える
+          drawingHistory = msg.history;
+          redraw();
+        } else if (msg.type === 'stroke') {
+          // 新しい描画だけを追加
+          drawingHistory.push(msg.stroke);
+          redraw();
         }
-
 
         //プレイヤー情報が送られてきたら(カワグチ)
         if (msg.type === 'players') {
