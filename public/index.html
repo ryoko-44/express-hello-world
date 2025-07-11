@@ -155,24 +155,36 @@
         }
       }
 
+      //色の情報と太さの情報を追加
       function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({ x, y, control, type: 'paint' })
+        const message = JSON.stringify({
+          x,
+          y,
+          control,
+          color: colorPicker.value,
+          width: lineWidthSlider.value,
+          type: 'paint'
+        });
         ws.send(message)
       }
 
       ws.onmessage = (event) => {
         const msg = JSON.parse(event.data)
         if (msg.type === 'paint') {
-          const { x, y, control } = msg
-          console.log({ control })
+          const { x, y, control, color, width } = msg;
+
+          // 色と線の太さを反映（受信側）
+          if (color) ctx.strokeStyle = color;
+          if (width) ctx.lineWidth = parseFloat(width);
+
           if (control === 'mousedown') {
-            mousedown()
+            mousedown();
           } else if (control === 'mouseup') {
-            mouseup()
+            mouseup();
           } else if (control === 'mousemove') {
-            mousemove(x, y)
+            mousemove(x, y);
           } else if (control === 'mouseout') {
-            mouseout()
+            mouseout();
           }
         }
         if (msg.type === 'chat') {
