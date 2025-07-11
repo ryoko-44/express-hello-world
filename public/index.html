@@ -102,7 +102,7 @@
       colorPicker.addEventListener('input', () => {
         ctx.strokeStyle = colorPicker.value;
       });
-      //太さをcanvasに反映させる
+      //線の太さをcanvasに反映させる
       const lineWidthSlider = document.getElementById('lineWidthSlider');
       ctx.lineWidth = lineWidthSlider.value;
       lineWidthSlider.addEventListener('input', () => {
@@ -155,17 +155,9 @@
         }
       }
 
-      // 🎯 送信するメッセージに color, width を追加
       function sendDrawingEvent(x, y, control) {
-        const message = JSON.stringify({
-          x,
-          y,
-          control,
-          color: colorPicker.value,
-          width: lineWidthSlider.value,
-          type: 'paint'
-        });
-        ws.send(message);
+        const message = JSON.stringify({ x, y, control, type: 'paint' })
+        ws.send(message)
       }
 
       ws.onmessage = (event) => {
@@ -174,7 +166,7 @@
           const { x, y, control } = msg
           console.log({ control })
           if (control === 'mousedown') {
-            mousedown(color, width);
+            mousedown()
           } else if (control === 'mouseup') {
             mouseup()
           } else if (control === 'mousemove') {
