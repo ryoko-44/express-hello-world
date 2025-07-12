@@ -25,6 +25,17 @@ app.ws('/ws', (ws, req) => {
     const msg = JSON.parse(message)
     console.log('Received:', message)
 
+    //undo/redo処理(オタニ追加)
+    if (msg.type === "undo" || msg.type === "redo") {
+      // 全クライアントに伝える
+      connects.forEach((socket) => {
+        if (socket.readyState === 1) {
+          socket.send(JSON.stringify(msg));
+        }
+      });
+      return;
+    }
+
     //参加したら(カワグチ)
     if (msg.type === 'join') {
       players.add(msg.id)
@@ -69,11 +80,6 @@ app.ws('/ws', (ws, req) => {
         firstChar: firstChar,
         turnOrder: turnOrder
       });
-
-      // redo/undo処理(オタニ追加)
-      if (msg.type === "undo" || msg.type === "redo") {
-        broadcast(JSON.stringify(msg));
-      }
 
       // 全接続にゲーム開始通知を送る(カワグチ)
       connects.forEach((socket) => {
