@@ -70,6 +70,11 @@ app.ws('/ws', (ws, req) => {
         turnOrder: turnOrder
       });
 
+      // redo/undo処理(オタニ追加)
+      if (msg.type === "undo" || msg.type === "redo") {
+        broadcast(JSON.stringify(msg));
+      }
+
       // 全接続にゲーム開始通知を送る(カワグチ)
       connects.forEach((socket) => {
         if (socket.readyState === 1) {
