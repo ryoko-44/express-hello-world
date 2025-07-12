@@ -94,6 +94,7 @@
     #eraserToggle {
       margin-left: 10px;
     }
+    
 
     /* 線の太さやカラーピッカーの場所を一律管理(オガワ) */
     .drawing-tools {
@@ -138,18 +139,7 @@
       position: relative;
       z-index: 1;
     }
-    
-    /*カーソルガイドを作成(オタニ追加)*/
-    #cursorPreview {
-      position: absolute;
-      pointer-events: none;
-      border: 2px solid rgba(0, 0, 0, 0.5);
-      border-radius: 2px;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
-      background-color: red;
-      /* ←一時的に赤くしてテストしやすく */
-    }
+
   </style>
 </head>
 
@@ -359,26 +349,11 @@
         ctx.beginPath();
       }
 
-      canvas.addEventListener("mousemove", (e) => {
-        if (!gameStarted || !isDrawingTurn) {
-          cursorPreview.style.display = "none";
-          return;
+      canvas.addEventListener('mousemove', (e) => {
+        if (drawing) {
+          sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
         }
-
-        // キャンバスの位置を取得
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const size = parseInt(lineWidthSlider.value);
-        cursorPreview.style.display = "block";
-        cursorPreview.style.width = `${size}px`;
-        cursorPreview.style.height = `${size}px`;
-        cursorPreview.style.left = `${e.clientX}px`; // ←ウィンドウ座標でOK（position: absolute のため）
-        cursorPreview.style.top = `${e.clientY}px`;
-        cursorPreview.style.backgroundColor = eraserMode ? "#ffffff" : colorPicker.value;
-      });
-
+      })
       function mousemove(x, y) {
         if (drawing) {
           draw(x, y, true)
