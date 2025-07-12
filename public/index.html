@@ -322,7 +322,7 @@
 
       //受信側に color, width, eraser　を追加(オタニ追加)
       ws.onmessage = (event) => {
-        const msg = JSON.parse(e.data);
+        const msg = JSON.parse(event.data);
         if (msg.type === 'history') {
           // 新しい履歴全体を受信したら、全体を置き換える
           drawingHistory = msg.history;
@@ -390,6 +390,26 @@
           const li = document.createElement('li');
           li.textContent = msg.id + 'が入室しました '
           messageList.appendChild(li);
+        }
+
+        // Undo処理(オタニ追加)
+        if (msg.type === 'undo') {
+          if (drawingHistory.length > 0) {
+            const lastStroke = drawingHistory.pop();
+            undoneHistory.push(lastStroke);
+            redraw();
+          }
+          return;
+        }
+
+        // Redo処理(オタニ追加)
+        if (msg.type === 'redo') {
+          if (undoneHistory.length > 0) {
+            const restored = undoneHistory.pop();
+            drawingHistory.push(restored);
+            redraw();
+          }
+          return;
         }
       }
 

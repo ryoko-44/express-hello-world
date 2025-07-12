@@ -55,6 +55,12 @@ app.ws('/ws', (ws, req) => {
       return;
     }
 
+    // undo/redo処理を行う(オタニ追加)
+    if (msg.type === "undo" || msg.type === "redo") {
+      broadcast(JSON.stringify(msg));
+    }
+
+
     connects.forEach((socket) => {
       if (socket.readyState === 1) {
         // Check if the connection is open
