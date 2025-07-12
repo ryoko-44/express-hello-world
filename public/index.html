@@ -95,6 +95,18 @@
       margin-left: 10px;
     }
 
+    /*カーソルガイドを作成(オタニ追加)*/
+    #cursorPreview {
+      position: absolute;
+      pointer-events: none;
+      border: 2px solid rgba(0, 0, 0, 0.5);
+      border-radius: 2px;
+      transform: translate(-50%, -50%);
+      z-index: 1000;
+      background-color: red;
+      /* ←一時的に赤くしてテストしやすく */
+    }
+
     /* 線の太さやカラーピッカーの場所を一律管理(オガワ) */
     .drawing-tools {
       display: flex;
@@ -134,17 +146,11 @@
     #canvas {
       border: solid 1px black;
       /* 描画用キャンバスの枠線 */
+      /*セット(オタニ追加)*/
+      position: relative;
+      z-index: 1;
     }
 
-    /*カーソルガイドを作成(オタニ追加)*/
-    #cursorPreview {
-      position: absolute;
-      pointer-events: none;
-      border: 2px solid rgba(0, 0, 0, 0.5);
-      border-radius: 2px;
-      transform: translate(-50%, -50%);
-      z-index: 1000;
-    }
   </style>
 </head>
 
