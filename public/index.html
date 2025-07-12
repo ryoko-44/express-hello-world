@@ -488,16 +488,31 @@
               if (color) ctx.strokeStyle = color;
               if (width) ctx.lineWidth = parseFloat(width);
 
+              // 受信用ストローク（送信者ごとに分けたければMapでも可）
+              if (!window.currentStrokeRemote) {
+                window.currentStrokeRemote = [];
+              }
+
               if (control === 'mousedown') {
                 mousedown();
-              } else if (control === 'mouseup') {
-                mouseup();
+                window.currentStrokeRemote = [{ x, y }];
               } else if (control === 'mousemove') {
                 mousemove(x, y);
+                window.currentStrokeRemote.push({ x, y });
+              } else if (control === 'mouseup') {
+                mouseup();
+                drawingHistory.push({
+                  stroke: window.currentStrokeRemote,
+                  color: ctx.strokeStyle,
+                  width: ctx.lineWidth
+                });
+                undoneHistory = [];
+                window.currentStrokeRemote = [];
               } else if (control === 'mouseout') {
                 mouseout();
               }
             }
+
 
             if (msg.type === 'undo') {
               if (drawingHistory.length > 0) {
