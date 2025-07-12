@@ -25,15 +25,10 @@ app.ws('/ws', (ws, req) => {
     const msg = JSON.parse(message)
     console.log('Received:', message)
 
-    //undo/redo処理(オタニ追加)
+    // undo/redo を最初に処理
     if (msg.type === "undo" || msg.type === "redo") {
-      // 全クライアントに伝える
-      connects.forEach((socket) => {
-        if (socket.readyState === 1) {
-          socket.send(JSON.stringify(msg));
-        }
-      });
-      return;
+      broadcast(JSON.stringify(msg));
+      return; // 他の処理をしない
     }
 
     //参加したら(カワグチ)
@@ -58,6 +53,15 @@ app.ws('/ws', (ws, req) => {
           socket.send(playersMsg)
         }
       })
+
+      //broadcast関数を追加(オタニ追加)
+      function broadcast(message) {
+        connects.forEach((socket) => {
+          if (socket.readyState === 1) {
+            socket.send(message);
+          }
+        });
+      }
 
       // 他のクライアントに入室通知も送る(カワグチ)
       const joinMsg = JSON.stringify({ type: 'join', id: msg.id })
