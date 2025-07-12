@@ -345,9 +345,20 @@
           canvas.addEventListener('mouseup', (e) => {
             sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
           })
+          //mouseup時にcurrentStrokeを初期化
           function mouseup() {
             drawing = false
             ctx.beginPath()
+            if (currentStroke.length > 0) {
+              // 現在のストロークを保存
+              drawingHistory.push({
+                stroke: currentStroke,
+                color: ctx.strokeStyle,
+                width: ctx.lineWidth
+              });
+              currentStroke = []; // 次のストロークに備えてリセット
+              undoneHistory = []; // 新しい描画があったのでredo履歴をクリア
+            }
           }
 
           canvas.addEventListener('mouseout', (e) => {
@@ -357,14 +368,38 @@
             drawing = false
           }
 
+          //draw関数をundo/redoのために変更(オタニ追加)
           function draw(x, y, dragging) {
             if (dragging) {
-              ctx.lineTo(x, y)
-              ctx.stroke()
+              ctx.lineTo(x, y);
+              ctx.stroke();
+              currentStroke.push({ x, y });
             } else {
-              ctx.moveTo(x, y)
+              ctx.moveTo(x, y);
+              currentStroke.push({ x, y });
             }
           }
+
+          //canvasを再描画する際に必要
+          function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let item of drawingHistory) {
+              ctx.strokeStyle = item.color;
+              ctx.lineWidth = item.width;
+              ctx.beginPath();
+              const points = item.stroke;
+              for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                if (i === 0) {
+                  ctx.moveTo(p.x, p.y);
+                } else {
+                  ctx.lineTo(p.x, p.y);
+                }
+              }
+              ctx.stroke();
+            }
+          }
+
 
           // 描画ツール（Canvas, ColorPicker, LineWidthSlider）の有効/無効を切り替える(オガワ)
           function enableDrawingTools() {
