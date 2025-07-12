@@ -54,15 +54,6 @@ app.ws('/ws', (ws, req) => {
         }
       })
 
-      //broadcast関数を追加(オタニ追加)
-      function broadcast(message) {
-        connects.forEach((socket) => {
-          if (socket.readyState === 1) {
-            socket.send(message);
-          }
-        });
-      }
-
       // 他のクライアントに入室通知も送る(カワグチ)
       const joinMsg = JSON.stringify({ type: 'join', id: msg.id })
       connects.forEach((socket) => {
@@ -134,6 +125,15 @@ function notifyNextTurn() {
   connects.forEach((socket) => {
     if (socket.readyState === 1) socket.send(turnMsg)
   })
+}
+
+//broadcast関数を追加(オタニ追加)
+function broadcast(message) {
+  connects.forEach((socket) => {
+    if (socket.readyState === 1) {
+      socket.send(message);
+    }
+  });
 }
 
 //ひらがな　一文字を選ぶ関数(カワグチ)
