@@ -228,6 +228,9 @@
           //一時的に描かれた画像を保持する(オガワ)
           let currentDrawingData = null;
 
+          //書いた情報を保管する(オタニ追加)
+          let currentRemoteStroke = [];
+
           //ボタンとチャットしている場所の管理(カワグチ)
           const startButton = document.getElementById('startButton')
           const chatArea = document.querySelector('.chat')
@@ -319,6 +322,16 @@
           //redo/undoボタン追加(オタニ追加)
           const undoBtn = document.getElementById('undoBtn');
           const redoBtn = document.getElementById('redoBtn');
+
+          //undoボタンクリックでWebSocketに送信(オタニ追加)
+          undoBtn.addEventListener('click', () => {
+            ws.send(JSON.stringify({ type: 'undo' }));
+          });
+
+          //redoボタンクリックでWebSocketに送信(オタニ追加)
+          redoBtn.addEventListener('click', () => {
+            ws.send(JSON.stringify({ type: 'redo' }));
+          });
 
           //現在描画している線の座標を一時的に保存するための配列(オタニ追加)
           let currentStroke = [];
@@ -485,33 +498,29 @@
             if (msg.type === 'paint') {
               const { x, y, control, color, width } = msg;
 
-              if (color) ctx.strokeStyle = color;
-              if (width) ctx.lineWidth = parseFloat(width);
-
-              // 受信用ストローク（送信者ごとに分けたければMapでも可）
-              if (!window.currentStrokeRemote) {
-                window.currentStrokeRemote = [];
-              }
+              ctx.strokeStyle = color || "#000000";
+              ctx.lineWidth = parseFloat(width) || 1;
 
               if (control === 'mousedown') {
                 mousedown();
-                window.currentStrokeRemote = [{ x, y }];
+                currentRemoteStroke = [{ x, y }];
               } else if (control === 'mousemove') {
                 mousemove(x, y);
-                window.currentStrokeRemote.push({ x, y });
+                currentRemoteStroke.push({ x, y });
               } else if (control === 'mouseup') {
                 mouseup();
                 drawingHistory.push({
-                  stroke: window.currentStrokeRemote,
+                  stroke: [...currentRemoteStroke],
                   color: ctx.strokeStyle,
                   width: ctx.lineWidth
                 });
                 undoneHistory = [];
-                window.currentStrokeRemote = [];
+                currentRemoteStroke = [];
               } else if (control === 'mouseout') {
                 mouseout();
               }
             }
+
 
 
             if (msg.type === 'undo') {
