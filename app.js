@@ -13,7 +13,6 @@ let chatHistory = [];
 // グローバルでターン制御を保持(カワグチ)
 let turnOrder = [];
 let currentTurnIndex = 0;
-let round = 1;
 
 app.use(express.static('public'))
 
@@ -25,10 +24,10 @@ app.ws('/ws', (ws, req) => {
     const msg = JSON.parse(message)
     console.log('Received:', message)
 
-    // undo/redo を最初に処理
+    //undo/redo を最初に処理(オタニ追加)
     if (msg.type === "undo" || msg.type === "redo") {
       broadcast(JSON.stringify(msg));
-      return; // 他の処理をしない
+      return;
     }
 
     //参加したら(カワグチ)
@@ -70,32 +69,16 @@ app.ws('/ws', (ws, req) => {
       const shuffledPlayers = Array.from(players).sort(() => Math.random() - 0.5);
       currentTurnIndex = 0;
 
-      const startMsg = JSON.stringify({
-        type: 'start',
-        firstChar: firstChar,
-        turnOrder: turnOrder
-      });
-
       // 全接続にゲーム開始通知を送る(カワグチ)
       connects.forEach((socket) => {
         if (socket.readyState === 1) {
-          socket.send(startMsg);
+          socket.send(JSON.stringify({
+            type: 'start',
+            firstChar: firstChar,
+            turnOrder: shuffledPlayers,
+          }));
         }
       });
-      notifyNextTurn();
-      return;
-    }
-
-    // ターン終了を受け取る(カワグチ)
-    if (msg.type === 'end_turn') {
-      currentTurnIndex++;
-
-      if (currentTurnIndex >= turnOrder.length) {
-        currentTurnIndex = 0;
-        round++
-      }
-
-      notifyNextTurn();
       return;
     }
 
@@ -125,15 +108,6 @@ function notifyNextTurn() {
   connects.forEach((socket) => {
     if (socket.readyState === 1) socket.send(turnMsg)
   })
-}
-
-//broadcast関数を追加(オタニ追加)
-function broadcast(message) {
-  connects.forEach((socket) => {
-    if (socket.readyState === 1) {
-      socket.send(message);
-    }
-  });
 }
 
 //ひらがな　一文字を選ぶ関数(カワグチ)

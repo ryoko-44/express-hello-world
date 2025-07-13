@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Chat App</title>
+    <title>つなげ！　絵しりとり</title>
     <style>
         .chat {
             display: flex;
@@ -135,6 +135,18 @@
             border: solid 1px black;
             /* 描画用キャンバスの枠線 */
         }
+
+        /*カーソルガイド(オタニ追加)*/
+        .canvases-container {
+            position: relative;
+            /* 子要素の絶対配置のため */
+        }
+
+        /* カーソルガイド用キャンバスを重ねて表示(オタニ追加) */
+        #cursorCanvas {
+            top: 0;
+            left: 0;
+        }
     </style>
 </head>
 
@@ -175,6 +187,8 @@
     <div class="canvases-container">
         <canvas id="receivedCanvas" width="600" height="600"></canvas>
         <canvas id="canvas" width="600" height="600"></canvas>
+        <!-- カーソルガイド(オタニ追加) -->
+        <canvas id="cursorCanvas" width="600" height="600" style="position: absolute; pointer-events: none;"></canvas>
     </div>
 
     <div class="drawing-tools">
@@ -247,15 +261,10 @@
 
             // 現在の入室人数を表示をする関数(カワグチ)
             function updatePlayerCountDisplay() {
-                let countSpan = document.getElementById('playerCountSpan')
-
-                if (!countSpan) {
-                    countSpan = document.createElement('span')
-                    countSpan.id = 'playerCountSpan'
-                    countSpan.style.marginLeft = '10px'
-                    startButton.parentNode.insertBefore(countSpan, startButton.nextSibling)
+                const playerCountElement = document.getElementById('playerCount');
+                if (playerCountElement) {
+                    playerCountElement.textContent = players.size;
                 }
-                countSpan.textContent = `入室人数: ${players.size} 人`
             }
 
             // ゲーム開始ボタンが押されたら(カワグチ)
@@ -343,11 +352,26 @@
                 ctx.beginPath();
             }
 
+            //cursolの追加(オタニ追加)
+            const cursorCanvas = document.getElementById('cursorCanvas');
+            const cursorCtx = cursorCanvas.getContext('2d');
+
+            // マウス移動時にガイドを表示(オタニ追加)
             canvas.addEventListener('mousemove', (e) => {
-                if (drawing) {
-                    sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
-                }
-            })
+                if (!gameStarted || !isDrawingTurn) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const size = parseInt(lineWidthSlider.value) + 4; // 太さに応じて調整
+                const half = size / 2;
+
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height); // 前のガイドを消す
+                cursorCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+                cursorCtx.lineWidth = 1;
+                cursorCtx.strokeRect(x - half, y - half, size, size);
+            });
             function mousemove(x, y) {
                 if (drawing) {
                     draw(x, y, true)
@@ -375,6 +399,8 @@
 
             canvas.addEventListener('mouseout', (e) => {
                 sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
+                //mouseがcanvas外に出たとき(オタニ追加)
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
             })
             function mouseout() {
                 drawing = false
@@ -573,11 +599,36 @@
                     document.getElementById('turnSelect').parentElement.style.display = 'none'
                     document.getElementById('startButton').style.display = 'none'
 
+                    const firstCharEl = document.getElementById('firstChar');
+                    firstCharEl.textContent = '最初の文字: ' + msg.firstChar;
+                    firstCharEl.style.display = 'inline';
+
+
+                    // 最初の文字をここで更新
+                    if (msg.firstChar) {
+                        console.log("最初の文字:", msg.firstChar);
+                        const firstCharEl = document.getElementById('firstChar');
+                        firstCharEl.textContent = '最初の文字: ' + msg.firstChar;
+                        firstCharEl.style.display = 'inline';
+                        console.log("最初の文字:", msg.firstChar);
+                    }
+
+                    // ターン順を表示または保持
+                    if (msg.turnOrder) {
+                        console.log("ターン順:", msg.turnOrder);
+                        const turnOrderDisplay = document.getElementById('turnOrderDisplay');
+                        alert(`最初の文字: ${msg.firstChar}\nターン順: ${msg.turnOrder.join(" → ")}`);
+                        if (turnOrderDisplay) {
+                            turnOrderDisplay.textContent = 'ターン順: ' + msg.turnOrder.join(' → ');
+                            turnOrderDisplay.style.display = 'inline';
+                        }
+                    }
+
                     gameStarted = true; //ゲーム開始状態にする(オガワ)
                     setDrawingTurnUI();
                 }
 
-                //メッセージ送ったときの挙動の関数(カワグチ)
+                //メッセージ送ったときのテンプレート関数(カワグチ)
                 function appendMessage(id, text, myId) {
                     const messageList = document.querySelector('.messages')
                     const li = document.createElement('li')
