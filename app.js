@@ -24,7 +24,7 @@ app.ws('/ws', (ws, req) => {
     const msg = JSON.parse(message)
     console.log('Received:', message)
 
-    //undo/redo を最初に処理(オタニ追加)
+    //undo/redo を最初に処理(お)
     if (msg.type === "undo" || msg.type === "redo") {
       broadcast(JSON.stringify(msg));
       return;
