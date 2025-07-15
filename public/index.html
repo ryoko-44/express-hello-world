@@ -420,6 +420,7 @@
                 ctx.beginPath();
             }
 
+            //マウスが動いた時にカーソルガイドを描画(オタニ追加)
             canvas.addEventListener('mousemove', (e) => {
                 if (!gameStarted || !isDrawingTurn) return;
 
@@ -431,7 +432,22 @@
                 const half = size / 2;
 
                 cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height); // 前のガイドを消す
-                cursorCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+                // 現在の描画色を取得
+                const drawColor = ctx.strokeStyle;
+
+                // RGBAに変換
+                let guideColor = drawColor;
+
+                // 16進カラー（#rrggbb）なら、rgba に変換
+                if (/^#[0-9A-F]{6}$/i.test(drawColor)) {
+                    const r = parseInt(drawColor.substr(1, 2), 16);
+                    const g = parseInt(drawColor.substr(3, 2), 16);
+                    const b = parseInt(drawColor.substr(5, 2), 16);
+                    guideColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                }
+
+                cursorCtx.strokeStyle = guideColor;
+
                 cursorCtx.lineWidth = 1;
                 cursorCtx.strokeRect(x - half, y - half, size, size);
                 if (drawing) {
