@@ -145,8 +145,7 @@
             align-items: flex-start;
             /* 上端を揃える */
             position: relative;
-            /* 子要素のabsolute配置の基準 */
-            width: 1220px; height: 600px;
+            /* 子要素の絶対配置のため(オタニ追加) */
         }
 
         .canvases-container canvas {
@@ -164,14 +163,10 @@
             /* 描画用キャンバスの枠線 */
         }
 
-        /*カーソルガイド(オタニ追加)*/
-        #cursorGuideCanvas {
-            position: absolute;
-            /* メインキャンバスの上に重ねる */
-             left: calc(600px + 20px);
+        /* カーソルガイド用キャンバスを重ねて表示(オタニ追加) */
+        #cursorCanvas {
             top: 0;
-            pointer-events: none;
-            /* マウスイベントを下のキャンバスに透過させる */
+            left: 0;
         }
 
         /* UIの表示/非表示制御(カワグチ) */
@@ -237,7 +232,7 @@
             <canvas id="receivedCanvas" width="600" height="600"></canvas>
             <canvas id="canvas" width="600" height="600"></canvas>
             <!-- コンソールガイド用のキャンバスを作成(オタニ追加) -->
-            <canvas id="cursorGuideCanvas" width="600" height="600"
+            <canvas id="cursorCanvas" width="600" height="600"
                 style="position: absolute; pointer-events: none;"></canvas>
         </div>
 
@@ -356,8 +351,8 @@
             const ctx = canvas.getContext('2d')
 
             // カーソルガイド用のキャンバスとコンテキスト(オタニ追加)
-            const cursorGuideCanvas = document.getElementById('cursorGuideCanvas');
-            const cursorGuideCtx = cursorGuideCanvas.getContext('2d');
+            const cursorCanvas = document.getElementById('cursorCanvas');
+            const cursorCtx = cursorCanvas.getContext('2d');
 
             //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
             const colorPicker = document.getElementById('colorPicker');
@@ -388,21 +383,8 @@
                 } else {
                     ctx.strokeStyle = colorPicker.value;
                 }
-            });
-
-            //カーソルガイド(オタニ追加)
-            function drawCursorGuide() {
-                cursorGuideCtx.clearRect(0, 0, cursorGuideCanvas.width, cursorGuideCanvas.height); // ガイドキャンバスをクリア
-
-                if (!showCursorGuide) return;
-
-                cursorGuideCtx.beginPath();
-                cursorGuideCtx.arc(cursorX, cursorY, currentLineWidth / 2 + 2, 0, Math.PI * 2);
-                cursorGuideCtx.fillStyle = "rgba(100, 100, 100, 0.5)";
-                cursorGuideCtx.fill();
-                cursorGuideCtx.closePath();
-            }
-
+            })
+            
             //redo/undoボタン追加(オタニ追加)
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
@@ -428,14 +410,22 @@
                 ctx.beginPath();
             }
 
+            // マウス移動時にガイドを表示
             canvas.addEventListener('mousemove', (e) => {
-                cursorX = e.offsetX;
-                cursorY = e.offsetY;
-                drawCursorGuide(); // マウス移動のたびにガイドを再描画
-                if (drawing) {
-                    sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
-                }
-            })
+                if (!gameStarted || !isDrawingTurn) return;
+
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                const size = parseInt(lineWidthSlider.value) + 4; // 太さに応じて調整
+                const half = size / 2;
+
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height); // 前のガイドを消す
+                cursorCtx.strokeStyle = 'rgba(0,0,0,0.5)';
+                cursorCtx.lineWidth = 1;
+                cursorCtx.strokeRect(x - half, y - half, size, size);
+            });
             function mousemove(x, y) {
                 if (drawing) {
                     draw(x, y, true)
@@ -461,17 +451,9 @@
                 }
             }
 
-            //キャンバスの中に入ったとき(オタニ追加)
-            canvas.addEventListener('mouseenter', () => {
-                showCursorGuide = true;
-                drawCursorGuide(); // キャンバスに入ったときに最初のガイドを描画
+            canvas.addEventListener('mouseout', () => {
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
             });
-
-            canvas.addEventListener('mouseout', (e) => {
-                showCursorGuide = false;
-                cursorGuideCtx.clearRect(0, 0, cursorGuideCanvas.width, cursorGuideCanvas.height); // ガイドを消去(オタニ追加)
-                sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
-            })
             function mouseout() {
                 drawing = false
             }
