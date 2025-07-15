@@ -350,6 +350,11 @@
             const canvas = document.getElementById('canvas')
             const ctx = canvas.getContext('2d')
 
+            //カーソルガイドのコンテキストを取得(オタニ追加)
+            const cursorCanvas = document.getElementById('cursorCanvas');
+            const cursorCtx = cursorCanvas.getContext('2d');
+
+
             //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
             const colorPicker = document.getElementById('colorPicker');
             const lineWidthSlider = document.getElementById('lineWidthSlider');
