@@ -437,17 +437,17 @@
                 const colorValue = colorPicker?.value || '#000000';
                 const drawColor = eraserMode ? '#ffffff' : colorValue;
 
-                // 塗りつぶし色（常に半透明）
+                // 塗りつぶし色
                 let fillColor = drawColor;
                 if (/^#[0-9A-F]{6}$/i.test(drawColor)) {
                     const r = parseInt(drawColor.substr(1, 2), 16);
                     const g = parseInt(drawColor.substr(3, 2), 16);
                     const b = parseInt(drawColor.substr(5, 2), 16);
-                    fillColor = `rgba(${r}, ${g}, ${b}, 0.3)`; // 塗り色
+                    fillColor = `rgba(${r}, ${g}, ${b}, 1.0)`; // 塗り色
                 }
 
                 // 枠線の色（消しゴム時は黒、それ以外は同じ色）
-                const strokeColor = eraserMode ? 'black' : fillColor;
+                const strokeColor = eraserMode ? 'glay' : fillColor;
 
                 // 描画
                 cursorCtx.fillStyle = fillColor;
