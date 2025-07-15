@@ -165,6 +165,8 @@
 
         /* カーソルガイド用キャンバスを重ねて表示(オタニ追加) */
         #cursorCanvas {
+            position: absolute;
+            pointer-events: none;
             top: 0;
             left: 0;
         }
@@ -354,6 +356,13 @@
             const cursorCanvas = document.getElementById('cursorCanvas');
             const cursorCtx = cursorCanvas.getContext('2d');
 
+            // 右の #canvas を基準に座標調整(オタニ追加)
+            function updateCursorCanvasPosition() {
+                const canvasRect = canvas.getBoundingClientRect();
+                cursorCanvas.style.left = canvas.offsetLeft + 'px';
+                cursorCanvas.style.top = canvas.offsetTop + 'px';
+            }
+            updateCursorCanvasPosition();
 
             //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
             const colorPicker = document.getElementById('colorPicker');
