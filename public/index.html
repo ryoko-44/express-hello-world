@@ -432,18 +432,14 @@
                 const half = size / 2;
 
                 cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height); // 前のガイドを消す
-                // 現在の描画色を取得
-                const drawColor = ctx.strokeStyle;
-
-                // RGBAに変換
+                let drawColor = eraserMode ? '#ffffff' : colorPicker.value;
                 let guideColor = drawColor;
 
-                // 16進カラー（#rrggbb）なら、rgba に変換
                 if (/^#[0-9A-F]{6}$/i.test(drawColor)) {
                     const r = parseInt(drawColor.substr(1, 2), 16);
                     const g = parseInt(drawColor.substr(3, 2), 16);
                     const b = parseInt(drawColor.substr(5, 2), 16);
-                    guideColor = `rgba(${r}, ${g}, ${b}, 0.7)`;
+                    guideColor = `rgba(${r}, ${g}, ${b}, 0.6)`; // 半透明に
                 }
 
                 cursorCtx.strokeStyle = guideColor;
