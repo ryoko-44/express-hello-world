@@ -144,13 +144,12 @@
             /* キャンバスを中央寄せ */
             align-items: flex-start;
             /* 上端を揃える */
+            position: relative;
+            /* 子要素のabsolute配置の基準 */
+            width: 1220px; height: 600px;
         }
 
         .canvases-container canvas {
-            position: relative;
-            /* 子要素のabsolute配置の基準(オタニ追加) */
-            display: flex;
-            /* これによりflexアイテムは相対位置の基準にならない(オタニ追加) */
             display: block;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -169,7 +168,7 @@
         #cursorGuideCanvas {
             position: absolute;
             /* メインキャンバスの上に重ねる */
-            left: 0;
+             left: calc(600px + 20px);
             top: 0;
             pointer-events: none;
             /* マウスイベントを下のキャンバスに透過させる */
@@ -238,7 +237,7 @@
             <canvas id="receivedCanvas" width="600" height="600"></canvas>
             <canvas id="canvas" width="600" height="600"></canvas>
             <!-- コンソールガイド用のキャンバスを作成(オタニ追加) -->
-            <canvas id="cursorGuideCanvas" width="60" height="60"
+            <canvas id="cursorGuideCanvas" width="600" height="600"
                 style="position: absolute; pointer-events: none;"></canvas>
         </div>
 
