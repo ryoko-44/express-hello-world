@@ -231,7 +231,7 @@
         <div class="canvases-container">
             <canvas id="receivedCanvas" width="600" height="600"></canvas>
             <canvas id="canvas" width="600" height="600"></canvas>
-            <!-- コンソールガイド用のキャンバスを作成(オタニ追加) -->
+            <!-- コンソールガイド用キャンバス(オタニ追加) -->>
             <canvas id="cursorCanvas" width="600" height="600"
                 style="position: absolute; pointer-events: none;"></canvas>
         </div>
@@ -350,10 +350,6 @@
             const canvas = document.getElementById('canvas')
             const ctx = canvas.getContext('2d')
 
-            // カーソルガイド用のキャンバスとコンテキスト(オタニ追加)
-            const cursorCanvas = document.getElementById('cursorCanvas');
-            const cursorCtx = cursorCanvas.getContext('2d');
-
             //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
             const colorPicker = document.getElementById('colorPicker');
             const lineWidthSlider = document.getElementById('lineWidthSlider');
@@ -383,8 +379,8 @@
                 } else {
                     ctx.strokeStyle = colorPicker.value;
                 }
-            })
-            
+            });
+
             //redo/undoボタン追加(オタニ追加)
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
@@ -410,7 +406,6 @@
                 ctx.beginPath();
             }
 
-            // マウス移動時にガイドを表示
             canvas.addEventListener('mousemove', (e) => {
                 if (!gameStarted || !isDrawingTurn) return;
 
@@ -425,12 +420,19 @@
                 cursorCtx.strokeStyle = 'rgba(0,0,0,0.5)';
                 cursorCtx.lineWidth = 1;
                 cursorCtx.strokeRect(x - half, y - half, size, size);
-            });
+                if (drawing) {
+                    sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
+                }
+            })
             function mousemove(x, y) {
                 if (drawing) {
                     draw(x, y, true)
                 }
             }
+
+            canvas.addEventListener('mouseout', () => {
+                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+            });
 
             canvas.addEventListener('mouseup', (e) => {
                 sendDrawingEvent(e.offsetX, e.offsetY, 'mouseup')
@@ -451,9 +453,9 @@
                 }
             }
 
-            canvas.addEventListener('mouseout', () => {
-                cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
-            });
+            canvas.addEventListener('mouseout', (e) => {
+                sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
+            })
             function mouseout() {
                 drawing = false
             }
