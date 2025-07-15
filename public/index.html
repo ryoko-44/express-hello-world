@@ -439,11 +439,14 @@
                     const r = parseInt(drawColor.substr(1, 2), 16);
                     const g = parseInt(drawColor.substr(3, 2), 16);
                     const b = parseInt(drawColor.substr(5, 2), 16);
-                    guideColor = `rgba(${r}, ${g}, ${b}, 0.6)`; // 半透明に
+                    guideColor = `rgba(${r}, ${g}, ${b}, 1.0)`; // 半透明に
                 }
-                
-                cursorCtx.strokeStyle = guideColor;
 
+                // 塗りつぶし
+                cursorCtx.fillStyle = guideColor;
+                cursorCtx.fillRect(x - half, y - half, size, size);
+
+                cursorCtx.strokeStyle = guideColor;
                 cursorCtx.lineWidth = 1;
                 cursorCtx.strokeRect(x - half, y - half, size, size);
                 if (drawing) {
