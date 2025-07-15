@@ -147,6 +147,10 @@
         }
 
         .canvases-container canvas {
+            position: relative;
+            /* 子要素のabsolute配置の基準(オタニ追加) */
+            display: flex;
+            /* これによりflexアイテムは相対位置の基準にならない(オタニ追加) */
             display: block;
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
@@ -159,6 +163,16 @@
         #canvas {
             border: solid 1px black;
             /* 描画用キャンバスの枠線 */
+        }
+
+        /*カーソルガイド(オタニ追加)*/
+        #cursorGuideCanvas {
+            position: absolute;
+            /* メインキャンバスの上に重ねる */
+            left: 0;
+            top: 0;
+            pointer-events: none;
+            /* マウスイベントを下のキャンバスに透過させる */
         }
 
         /* UIの表示/非表示制御(カワグチ) */
@@ -223,6 +237,9 @@
         <div class="canvases-container">
             <canvas id="receivedCanvas" width="600" height="600"></canvas>
             <canvas id="canvas" width="600" height="600"></canvas>
+            <!-- コンソールガイド用のキャンバスを作成(オタニ追加) -->
+            <canvas id="cursorGuideCanvas" width="60" height="60"
+                style="position: absolute; pointer-events: none;"></canvas>
         </div>
 
         <div class="drawing-tools">
@@ -339,6 +356,10 @@
             const canvas = document.getElementById('canvas')
             const ctx = canvas.getContext('2d')
 
+            // カーソルガイド用のキャンバスとコンテキスト(オタニ追加)
+            const cursorGuideCanvas = document.getElementById('cursorGuideCanvas');
+            const cursorGuideCtx = cursorGuideCanvas.getContext('2d');
+
             //ColorPickerの色、線の太さ、消しゴムをcanvasに反映させる(オタニ追加)
             const colorPicker = document.getElementById('colorPicker');
             const lineWidthSlider = document.getElementById('lineWidthSlider');
@@ -370,6 +391,19 @@
                 }
             });
 
+            //カーソルガイド(オタニ追加)
+            function drawCursorGuide() {
+                cursorGuideCtx.clearRect(0, 0, cursorGuideCanvas.width, cursorGuideCanvas.height); // ガイドキャンバスをクリア
+
+                if (!showCursorGuide) return;
+
+                cursorGuideCtx.beginPath();
+                cursorGuideCtx.arc(cursorX, cursorY, currentLineWidth / 2 + 2, 0, Math.PI * 2);
+                cursorGuideCtx.fillStyle = "rgba(100, 100, 100, 0.5)";
+                cursorGuideCtx.fill();
+                cursorGuideCtx.closePath();
+            }
+
             //redo/undoボタン追加(オタニ追加)
             const undoBtn = document.getElementById('undoBtn');
             const redoBtn = document.getElementById('redoBtn');
@@ -396,6 +430,9 @@
             }
 
             canvas.addEventListener('mousemove', (e) => {
+                cursorX = e.offsetX;
+                cursorY = e.offsetY;
+                drawCursorGuide(); // マウス移動のたびにガイドを再描画
                 if (drawing) {
                     sendDrawingEvent(e.offsetX, e.offsetY, 'mousemove')
                 }
@@ -425,7 +462,15 @@
                 }
             }
 
+            //キャンバスの中に入ったとき(オタニ追加)
+            canvas.addEventListener('mouseenter', () => {
+                showCursorGuide = true;
+                drawCursorGuide(); // キャンバスに入ったときに最初のガイドを描画
+            });
+
             canvas.addEventListener('mouseout', (e) => {
+                showCursorGuide = false;
+                cursorGuideCtx.clearRect(0, 0, cursorGuideCanvas.width, cursorGuideCanvas.height); // ガイドを消去(オタニ追加)
                 sendDrawingEvent(e.offsetX, e.offsetY, 'mouseout')
             })
             function mouseout() {
